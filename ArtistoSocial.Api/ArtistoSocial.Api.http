@@ -1,0 +1,6 @@
+@ArtistoSocial.Api_HostAddress = http://localhost:5148
+
+GET {{ArtistoSocial.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
