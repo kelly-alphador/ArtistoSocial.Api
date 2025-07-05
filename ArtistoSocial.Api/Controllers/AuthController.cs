@@ -2,7 +2,9 @@
 using System.Security.Claims;
 using System.Text;
 using ArtistoSocial.Domaine.Core.DTO.Artistes;
+using ArtistoSocial.Domaine.Core.DTO.Email;
 using ArtistoSocial.Domaine.Core.Entities;
+using ArtistoSocial.Domaine.Core.Interface;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,12 +18,14 @@ namespace ArtistoSocial.Api.Controllers
     {
         //permet gerer les utilisateurs(ajouter, modifier, supprimer, authentifier, etc.)
         private readonly UserManager<Artiste> _userManager;
+        private readonly IEmailService _emailService;
         //permet de recuperer la configuration de l'application interface dans asp.net core
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _webHostEnvironment;
-        public AuthController(UserManager<Artiste> userManager, IConfiguration configuration, IWebHostEnvironment webHostEnvironment)
+        public AuthController(UserManager<Artiste> userManager, IConfiguration configuration, IWebHostEnvironment webHostEnvironment, IEmailService emailService)
         {
             _userManager = userManager;
+            _emailService = emailService;
             _configuration = configuration;
             _webHostEnvironment = webHostEnvironment;
         }
@@ -32,54 +36,133 @@ namespace ArtistoSocial.Api.Controllers
                 return BadRequest(ModelState);
 
             if (registerModel.Password != registerModel.ConfirmPassword)
-                return BadRequest("le password et confirmPassword non identique");
+                return BadRequest("Le password et confirmPassword ne sont pas identiques");
 
             var userExists = await _userManager.FindByEmailAsync(registerModel.Email);
             if (userExists != null)
-                return BadRequest("Email Existe deja");
+                return BadRequest("Email existe déjà");
 
+            // Gestion de l'image profil
             string relativePath = null;
             if (registerModel.ImageProfil != null && registerModel.ImageProfil.Length > 0)
             {
-                // Racine du projet
                 string directoryPath = Path.Combine(_webHostEnvironment.ContentRootPath, @"wwwroot\image\profil");
 
-                // Créer le dossier s'il n'existe pas
                 if (!Directory.Exists(directoryPath))
                 {
                     Directory.CreateDirectory(directoryPath);
                 }
 
-                // Créer un nom unique pour éviter les collisions
                 string uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(registerModel.ImageProfil.FileName);
-
-                // Chemin complet du fichier
                 string filePath = Path.Combine(directoryPath, uniqueFileName);
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
-                    // Corrected: registerModel.ImageProfil is a string, not a file. 
-                    // You need to handle file upload properly using IFormFile.
                     await registerModel.ImageProfil.CopyToAsync(stream);
                 }
 
-                // Stocker le chemin relatif pour la base
                 relativePath = $"/image/profil/{uniqueFileName}";
             }
 
+            // Création de l'utilisateur
             var user = new Artiste
             {
                 UserName = registerModel.UserName,
                 Email = registerModel.Email,
                 ImageProfil = relativePath,
-                Date_inscription = registerModel.DateTime
+                Date_inscription = registerModel.DateTime,
+                EmailConfirmed = false // Important: email non confirmé
             };
 
             var result = await _userManager.CreateAsync(user, registerModel.Password);
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
-            var token = GenerateJwtToken(user);
-            return Ok(new { token });
+
+            // Génération du token de confirmation
+            var emailConfirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+            // Création du lien de confirmation
+            var baseUrl = _configuration["AppSettings:BaseUrl"];
+            var confirmationLink = $"{baseUrl}/auth/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(emailConfirmationToken)}";
+
+            // Envoi de l'email de confirmation
+            try
+            {
+                await _emailService.SendEmailConfirmationAsync(user.Email, confirmationLink);
+
+                return Ok(new
+                {
+                    message = "Inscription réussie. Veuillez vérifier votre email pour confirmer votre compte.",
+                    userId = user.Id
+                });
+            }
+            catch (Exception ex)
+            {
+                // Si l'email n'a pas pu être envoyé, supprimer l'utilisateur
+                await _userManager.DeleteAsync(user);
+                return StatusCode(500, "Erreur lors de l'envoi de l'email de confirmation. Veuillez réessayer.");
+            }
+        }
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail(string userId, string token)
+        {
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token))
+                return BadRequest("UserId et token sont requis");
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return BadRequest("Utilisateur non trouvé");
+
+            if (user.EmailConfirmed)
+                return Ok("Email déjà confirmé");
+
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+            if (!result.Succeeded)
+                return BadRequest("Token de confirmation invalide ou expiré");
+
+            // Génération du JWT après confirmation
+            var jwtToken = GenerateJwtToken(user);
+
+            return Ok(new
+            {
+                message = "Email confirmé avec succès",
+                token = jwtToken,
+                user = new
+                {
+                    id = user.Id,
+                    userName = user.UserName,
+                    email = user.Email,
+                    imageProfil = user.ImageProfil
+                }
+            });
+        }
+        [HttpPost("resend-confirmation")]
+        public async Task<IActionResult> ResendConfirmation([FromBody] ResendConfirmationDTO model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+                return BadRequest("Email non trouvé");
+
+            if (user.EmailConfirmed)
+                return BadRequest("Email déjà confirmé");
+
+            // Génération d'un nouveau token
+            var emailConfirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var baseUrl = _configuration["AppSettings:BaseUrl"];
+            var confirmationLink = $"{baseUrl}/auth/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(emailConfirmationToken)}";
+
+            try
+            {
+                await _emailService.SendEmailConfirmationAsync(user.Email, confirmationLink);
+                return Ok(new { message = "Email de confirmation renvoyé" });
+            }
+            catch
+            {
+                return StatusCode(500, "Erreur lors de l'envoi de l'email");
+            }
         }
 
         [HttpPost("login")]

@@ -5,14 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ArtistoSocial.Domaine.Core.DTO.Artistes
+namespace ArtistoSocial.Domaine.Core.DTO.Email
 {
-    public class ArtisteLoginDTO
+    public class ResendConfirmationDTO
     {
         [Required]
         [EmailAddress]
         public string Email { get; set; }
-        [Required]
-        public string Password { get; set; }
     }
 }
