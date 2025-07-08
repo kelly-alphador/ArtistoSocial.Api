@@ -4,6 +4,7 @@ using ArtistoSocial.Infrastructure.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ArtistoSocial.Infrastructure.Core.Migrations
 {
     [DbContext(typeof(ArtistoMusicalDbContext))]
-    partial class ArtistoMusicalDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250708072016_AjoutTableChansons")]
+    partial class AjoutTableChansons
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

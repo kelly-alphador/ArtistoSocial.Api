@@ -11,5 +11,6 @@ namespace ArtistoSocial.Domaine.Core.Entities
     {
         public string ImageProfil { get; set; }
         public DateTime Date_inscription { get; set; } = DateTime.UtcNow;
+        public ICollection<Chanson> ListChansons { get; set; } = new List<Chanson>();
     }
 }

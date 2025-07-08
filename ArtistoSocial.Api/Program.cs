@@ -21,7 +21,8 @@ builder.Services.AddSwaggerGen();
 //tu appele la methode d'extension
 builder.Services.AddJwtAuthentication(builder.Configuration);
 //builder.Services.AddIdentityWithEmailConfirmation();
-// Configuration des paramètres email
+
+//bind le EmailSettings de appsettings.json à la classe EmailSettings
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 // Enregistrement du service email
 builder.Services.AddScoped<IEmailService, EmailService>();

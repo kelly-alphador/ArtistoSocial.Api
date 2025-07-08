@@ -18,11 +18,13 @@ namespace ArtistoSocial.Infrastructure.Core.Data
         public ArtistoMusicalDbContext(DbContextOptions<ArtistoMusicalDbContext> options): base(options)
         {
         }
+        public DbSet<Chanson> Chansons { get; set; } // DbSet pour les chansons
         //pour configurer les entités et les relations
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfiguration(new ArtistesConfig());
+            modelBuilder.ApplyConfiguration(new ChansonConfig());
             
         }
        

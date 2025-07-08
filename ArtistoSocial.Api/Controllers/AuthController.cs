@@ -71,7 +71,7 @@ namespace ArtistoSocial.Api.Controllers
                 Email = registerModel.Email,
                 ImageProfil = relativePath,
                 Date_inscription = registerModel.DateTime,
-                EmailConfirmed = false // Important: email non confirmé
+                EmailConfirmed = false
             };
 
             var result = await _userManager.CreateAsync(user, registerModel.Password);
@@ -191,7 +191,7 @@ namespace ArtistoSocial.Api.Controllers
 
             var claims = new[]
             {
-                new Claim("Id", user.Id.ToString()), // Convert 'int' to 'string' using ToString()
+                new Claim("Id", user.Id.ToString()), 
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())

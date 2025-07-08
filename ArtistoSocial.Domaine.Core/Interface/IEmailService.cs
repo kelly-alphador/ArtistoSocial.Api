@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace ArtistoSocial.Domaine.Core.Interface
 {
+    //definir un contrat : Quelle methode doit contenir le service d'envoi d'email
     public interface IEmailService
     {
         Task SendEmailAsync(string toEmail, string subject, string body);

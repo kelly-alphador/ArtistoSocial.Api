@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace ArtistoSocial.Domaine.Core.DTO.Email
 {
+    //on creer cette classe pour lier les parametres de l'email dans appSettings.json a un objet
+    //Configuration binding
     public class EmailSettings
     {
         public string SmtpServer { get; set; }
