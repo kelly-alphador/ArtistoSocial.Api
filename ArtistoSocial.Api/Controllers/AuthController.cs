@@ -184,7 +184,7 @@ namespace ArtistoSocial.Api.Controllers
             var token = GenerateJwtToken(user);
             return Ok(new { Token = token });
         }
-        private string GenerateJwtToken(Artiste user)
+       /* private string GenerateJwtToken(Artiste user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["JwtConfig:Secret"]);
@@ -206,7 +206,32 @@ namespace ArtistoSocial.Api.Controllers
 
             var token = jwtTokenHandler.CreateToken(tokenDescriptor);
             return jwtTokenHandler.WriteToken(token);
+        }*/
+        private string GenerateJwtToken(Artiste user)
+        {
+            var jwtTokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["JwtConfig:Secret"]);
+
+            var claims = new[]
+            {
+                // ✅ IMPORTANT : Ici on met l'ID sous le bon claim standard
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()), // Sub peut aussi contenir l'ID
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(6), // durée de vie du token
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha512Signature)
+            };
+
+            var token = jwtTokenHandler.CreateToken(tokenDescriptor);
+            return jwtTokenHandler.WriteToken(token);
         }
+
     }
     /*public class ArtisteRegisterDTO
     {

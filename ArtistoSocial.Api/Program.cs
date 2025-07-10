@@ -4,6 +4,7 @@ using ArtistoSocial.Domaine.Core.DTO.Email;
 using ArtistoSocial.Domaine.Core.Entities;
 using ArtistoSocial.Domaine.Core.Interface;
 using ArtistoSocial.Infrastructure.Core.Data;
+using ArtistoSocial.Infrastructure.Core.Repository;
 using ArtistoSocial.Infrastructure.Core.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,8 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 // Enregistrement du service email
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
+builder.Services.AddScoped<IChansonRepository, ChansonRepository>();
 //Tu veux lier la section JwtConfig de ton appsettings.json à une classe C# (JwtConfig).
 builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection("JwtConfig"));
 //Tu ajoute identity dans le conteneur d'injection de dependance pour pouvoir utiliser les fonctionnalites de l'authentification et l'autorisation
