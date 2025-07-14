@@ -214,7 +214,7 @@ namespace ArtistoSocial.Api.Controllers
 
             var claims = new[]
             {
-                // ✅ IMPORTANT : Ici on met l'ID sous le bon claim standard
+                //IMPORTANT : Ici on met l'ID sous le bon claim standard
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()), // Sub peut aussi contenir l'ID

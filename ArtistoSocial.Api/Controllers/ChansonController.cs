@@ -1,4 +1,5 @@
-﻿using ArtistoSocial.Domaine.Core.DTO.Chanson;
+﻿using ArtistoSocial.Domaine.Core.DTO.ApiResponse;
+using ArtistoSocial.Domaine.Core.DTO.Chanson;
 using ArtistoSocial.Domaine.Core.Entities;
 using ArtistoSocial.Domaine.Core.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -80,6 +81,58 @@ namespace ArtistoSocial.Api.Controllers
             catch (Exception ex) 
             {
                 return StatusCode(500, new { message = "Erreur lors de l'ajout de la tâche", error = ex.Message });
+            }
+        }
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<ApiResponse>> DeleteAsync(int id)
+        {
+            try
+            {
+                var response = await _chansonRepository.DeleteAsync(id);
+
+                if (!response.Success)
+                {
+                    return BadRequest(response);
+                }
+                await _unitOfWork.SaveChangesAsync();
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = "Erreur serveur",
+                    Errors = { "Une erreur interne s'est produite" }
+                });
+            }
+        }
+
+        [HttpGet("listChanson")]
+        public async Task<ActionResult<List<ChansonDTO>>> GetAllAsync()
+        {
+            try
+            {
+                var response = await _chansonRepository.GetAllChansonAsync();
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erreur lors de la récupération des chansons" });
+            }
+        }
+        [HttpGet("recherche")]
+        public async Task<ActionResult<List<Chanson>>> RechercheParQueryAsync([FromQuery] string? titre = null,[FromQuery] string? nomArtiste = null)
+        {
+            try
+            {
+                var response = await _chansonRepository.RechercherParTitreEtArtisteAsync(nomArtiste, titre);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erreur lors de la recherche" });
             }
         }
     }
